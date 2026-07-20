@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AeroMind — AI Maintenance OS · Sustainable Aviation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900&family=Playfair+Display:ital,wght@1,500;1,600;1,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#111827; --ink-soft:#374151; --muted:#6b7280; --faint:#9ca3af;
+  --green:#16a34a; --green-deep:#15803d; --green-soft:#dcfce7; --green-bg:#f0fdf4;
+  --paper:#ffffff; --paper-soft:#f8fafc; --line:#e5e7eb;
+  --shadow:0 10px 30px rgba(17,24,39,.08);
+  --shadow-lg:0 24px 60px rgba(17,24,39,.14);
+  --r:18px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Inter',system-ui,sans-serif;background:#0b0f14;color:var(--ink);overflow:hidden}
+em.f{font-family:'Playfair Display',serif;font-style:italic;font-weight:600;color:var(--green)}
+
+.slide{position:absolute;inset:0;background:var(--paper);opacity:0;pointer-events:none;transition:opacity .55s ease;overflow:hidden;display:flex;flex-direction:column}
+.slide.on{opacity:1;pointer-events:auto}
+.slide-body{flex:1;position:relative;padding:64px 84px;display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:26px 40px;position:relative;z-index:5}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px}
+.mark{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#22c55e,#15803d);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:800}
+.pageno{font-size:15px;color:var(--faint);font-weight:600}.pageno b{color:var(--muted)}
+.eyebrow{color:var(--green);font-size:19px;font-weight:800;letter-spacing:.32em;text-transform:uppercase;margin-bottom:20px}
+h1.display{font-size:clamp(48px,5.8vw,86px);font-weight:900;letter-spacing:-.03em;line-height:1.04;color:var(--ink)}
+h1.display .f{font-weight:600}
+.lede{font-size:clamp(25px,2.1vw,32px);color:var(--ink-soft);line-height:1.55;max-width:34ch;margin-top:22px}
+.footnote{padding:0 40px 22px;font-size:16px;color:var(--faint)}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.chip{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:13px 23px;font-size:19px;font-weight:600;color:var(--ink-soft);box-shadow:0 4px 12px rgba(17,24,39,.05)}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--green)}
+.grad-mist{position:absolute;inset:0;background:
+  radial-gradient(60% 55% at 0% 0%,rgba(34,197,94,.10),transparent 60%),
+  radial-gradient(45% 45% at 100% 100%,rgba(59,130,246,.07),transparent 60%);pointer-events:none}
+
+/* --- fixed 16:9 stage --- */
+.stage-wrap{position:fixed;inset:0;background:#0b0f14;overflow:hidden}
+.deck{position:absolute;left:50%;top:50%;width:1920px;height:1080px;margin-left:-960px;margin-top:-540px;transform-origin:center center;box-shadow:0 0 120px rgba(0,0,0,.6)}
+
+/* landscape enforcement */
+@media print{
+  @page{size:1920px 1080px landscape;margin:0}
+  body{background:#fff}
+  .stage-wrap{position:static;display:block;background:#fff}
+  .deck{transform:none!important;box-shadow:none}
+  .slide{position:relative;opacity:1!important;pointer-events:auto;page-break-after:always;width:1920px;height:1080px}
+  .nav{display:none}
+}
+.rotate-note{display:none}
+@media (orientation:portrait) and (max-width:900px){
+  .rotate-note{display:grid;position:fixed;inset:0;z-index:200;background:#0b0f14;color:#e5e7eb;place-items:center;text-align:center;font-size:16px;line-height:1.6;padding:40px}
+  .rotate-note .ph{font-size:44px;display:block;margin-bottom:14px;animation:rot 2.2s ease-in-out infinite}
+}
+@keyframes rot{0%,100%{transform:rotate(0)}50%{transform:rotate(90deg)}}
+/* nav */
+.nav{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;z-index:50;background:rgba(255,255,255,.85);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:999px;padding:8px 14px;box-shadow:var(--shadow)}
+.nav button{border:0;background:#fff;border:1px solid var(--line);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:15px;color:var(--ink-soft);display:grid;place-items:center;transition:.2s}
+.nav button:hover{background:var(--green);color:#fff;border-color:var(--green)}
+.dots{display:flex;gap:6px}
+.dots i{width:7px;height:7px;border-radius:50%;background:#d1d5db;cursor:pointer;transition:.25s}
+.dots i.on{background:var(--green);transform:scale(1.35)}
+/* ---------- slide 1 cover ---------- */
+.s-cover{background:#fff}
+.s-cover .bg{position:absolute;inset:0;background:
+  linear-gradient(180deg,rgba(255,255,255,.35),#fff 85%),
+  repeating-linear-gradient(90deg,rgba(148,163,184,.18) 0 2px,transparent 2px 120px),
+  repeating-linear-gradient(0deg,rgba(148,163,184,.14) 0 2px,transparent 2px 110px),
+  linear-gradient(120deg,#eef2f6,#f8fafc)}
+.s-cover .slide-body{justify-content:center;z-index:2}
+.s-cover .who{display:flex;align-items:center;gap:14px;margin-top:56px}
+.s-cover .who .mark{width:40px;height:40px;border-radius:12px;font-size:17px}
+.s-cover .who b{font-size:22px;display:block}
+.s-cover .who span{font-size:16.5px;color:var(--muted)}
+/* ---------- slide 2 heroes ---------- */
+.s-heroes{background:#0d1117;color:#fff}
+.s-heroes .photo{position:absolute;inset:0;background:
+  radial-gradient(70% 80% at 68% 40%,rgba(120,140,160,.35),transparent 70%),
+  radial-gradient(40% 40% at 20% 20%,rgba(250,204,21,.10),transparent 60%),
+  linear-gradient(160deg,#1b232e 0%,#0d1117 70%);}
+.s-heroes .hangar{position:absolute;right:-4%;top:0;bottom:0;width:62%;opacity:.9}
+.s-heroes .slide-body{justify-content:flex-end;z-index:2;padding-bottom:90px}
+.s-heroes h1{color:#fff}
+.s-heroes em.f{color:#fff}
+.s-heroes .crumbs{display:flex;gap:0;align-items:center;margin-top:40px;flex-wrap:wrap}
+.s-heroes .crumbs span{font-size:18px;font-weight:600;color:#e5e7eb}
+.s-heroes .crumbs i{width:44px;height:1px;background:rgba(255,255,255,.35);margin:0 16px}
+.tech-art{position:absolute;right:90px;top:50%;transform:translateY(-50%);height:84%;filter:drop-shadow(0 30px 60px rgba(0,0,0,.5));z-index:2}
+/* ---------- slide 3 waste orbit ---------- */
+.orbit-wrap{position:absolute;right:6%;top:50%;transform:translateY(-50%);width:560px;height:560px}
+.orbit{position:absolute;border:1.5px dashed rgba(22,163,74,.35);border-radius:50%}
+.orbit.o1{inset:190px}.orbit.o2{inset:120px}.orbit.o3{inset:50px}.orbit.o4{inset:-10px}
+.core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:150px;height:150px;border-radius:50%;background:radial-gradient(circle at 30% 25%,#34d399,#15803d);color:#fff;display:grid;place-items:center;text-align:center;box-shadow:0 18px 40px rgba(21,128,61,.35)}
+.core small{font-size:10px;letter-spacing:.22em;opacity:.85}.core b{font-size:22px}
+.sat{position:absolute;background:#fff;border-radius:14px;box-shadow:var(--shadow);padding:14px 18px;min-width:150px;animation:float 6s ease-in-out infinite}
+.sat b{display:block;font-size:18px}.sat span{font-size:15.5px;color:var(--muted)}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+/* ---------- slide 4 / 12 card grids ---------- */
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;margin-top:auto}
+.gcard{padding:32px;display:flex;flex-direction:column;gap:14px}
+.gcard .ico{width:52px;height:52px;border-radius:14px;background:var(--green-soft);display:grid;place-items:center;font-size:22px}
+.gcard h3{font-size:clamp(26px,2.5vw,38px);font-weight:800;letter-spacing:-.02em}
+.gcard p{font-size:22px;color:var(--ink-soft);line-height:1.55}
+/* ---------- slide 5 platform map ---------- */
+.map-wrap{position:absolute;right:5%;top:50%;transform:translateY(-50%);width:600px;height:600px}
+.map-core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:170px;height:170px;border-radius:50%;background:radial-gradient(circle at 30% 25%,#34d399,#15803d);color:#fff;display:grid;place-items:center;text-align:center;box-shadow:0 18px 44px rgba(21,128,61,.35);z-index:2}
+.map-core small{font-size:10px;letter-spacing:.22em;opacity:.85;display:block}.map-core b{font-size:21px}
+.node{position:absolute;background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:14px 22px;font-size:18px;font-weight:700;z-index:2}
+.map-wrap svg{position:absolute;inset:0}
+.map-wrap line{stroke:rgba(22,163,74,.4);stroke-width:1.6}
+.pillrow{display:flex;gap:12px;margin-top:34px;flex-wrap:wrap}
+/* ---------- slide 6 workflow ---------- */
+.s-work .glasses-side{position:absolute;left:0;top:0;bottom:0;width:50%;background:linear-gradient(160deg,#f1f5f9,#fff);display:grid;place-items:center}
+.g-visual{position:relative;width:82%}.mrg{width:100%;filter:drop-shadow(0 40px 60px rgba(15,23,42,.35))}
+.g-visual .lens{position:absolute;border:14px solid #14181f;border-radius:34px;background:linear-gradient(150deg,rgba(226,232,240,.75),rgba(241,245,249,.35));box-shadow:0 30px 60px rgba(15,23,42,.25)}
+.g-visual .l1{left:0;top:14%;width:46%;height:56%;transform:rotate(-9deg)}
+.g-visual .l2{left:44%;top:26%;width:46%;height:56%;transform:rotate(-9deg)}
+.g-visual .bridge{position:absolute;left:41%;top:34%;width:12%;height:12px;background:#14181f;border-radius:8px;transform:rotate(-9deg)}
+.tagfloat{position:absolute;background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:11px 16px;font-size:13px;z-index:3}
+.tagfloat .lab{color:var(--green);font-weight:800;font-size:10.5px;letter-spacing:.18em;display:block;margin-bottom:3px}
+.tagfloat b{font-size:13.5px}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;margin-right:8px;animation:pul 1.6s infinite}
+@keyframes pul{0%{box-shadow:0 0 0 0 rgba(22,163,74,.45)}70%{box-shadow:0 0 0 9px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}
+.s-work .steps-side{position:absolute;right:0;top:0;bottom:0;width:50%;padding:90px 84px;display:flex;flex-direction:column;justify-content:center}
+.step{display:flex;gap:18px;margin-top:26px}
+.step .n{flex:0 0 34px;height:34px;border-radius:50%;background:var(--green);color:#fff;font-weight:800;font-size:14px;display:grid;place-items:center}
+.step b{font-size:27px;display:block}.step span{font-size:21px;color:var(--ink-soft)}
+/* ---------- slide 7 phone ---------- */
+.phone{width:330px;background:#111;border-radius:44px;padding:12px;box-shadow:var(--shadow-lg)}
+.phone .scr{background:#fff;border-radius:34px;overflow:hidden}
+.p-head{background:linear-gradient(135deg,#22c55e,#0f766e);color:#fff;padding:16px 20px 20px}
+.p-head .st{display:flex;justify-content:space-between;font-size:11px;opacity:.9;margin-bottom:14px}
+.p-head .fl{font-size:10px;letter-spacing:.18em;opacity:.85}
+.p-head h4{font-size:23px;font-weight:800;margin:4px 0 5px}
+.p-head small{font-size:11.5px;opacity:.9}
+.p-row{display:flex;justify-content:space-between;padding:13px 20px;border-bottom:1px solid var(--line);font-size:14px}
+.p-row span{color:var(--muted)}.p-row b{font-size:14px}
+.p-sus{margin:14px 16px;background:var(--paper-soft);border:1px solid var(--line);border-radius:14px;padding:14px}
+.p-sus .lab{color:var(--green);font-size:10px;font-weight:800;letter-spacing:.18em}
+.p-sus .row{display:flex;justify-content:space-between;align-items:flex-end}
+.p-sus .grade{font-size:30px;font-weight:900}
+.p-sus small{font-size:10px;color:var(--muted);text-align:right}
+.meter{height:6px;border-radius:4px;background:#e5e7eb;margin-top:10px;overflow:hidden}
+.meter i{display:block;height:100%;width:82%;background:linear-gradient(90deg,#22c55e,#15803d);border-radius:4px}
+.p-btn{display:block;margin:4px 16px 18px;background:#111827;color:#fff;text-align:center;border-radius:12px;padding:13px;font-size:13px;font-weight:700}
+.reward{position:absolute;background:#fff;border-radius:14px;box-shadow:var(--shadow);padding:11px 16px;font-size:13.5px;font-weight:700;z-index:4}
+.reward .lab{display:block;color:var(--green);font-size:10px;font-weight:800;letter-spacing:.14em}
+.qr-card{margin-top:26px;display:flex;align-items:center;gap:20px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px 22px;box-shadow:var(--shadow);max-width:430px}
+.qr{width:104px;height:104px;flex:none;border:1px solid var(--line);border-radius:10px;padding:6px;background:#fff}
+.qr-txt .lab{display:block;color:var(--green);font-size:13px;font-weight:800;letter-spacing:.18em}
+.qr-txt b{display:block;font-size:23px;margin:4px 0 3px}
+.qr-txt span{font-size:17.5px;color:var(--muted)}
+/* ---------- slide 8 dashboard ---------- */
+.dash{padding:22px;display:grid;grid-template-columns:1fr 320px;gap:20px}
+.dash-head{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;font-size:15px;color:var(--muted)}
+.tl{display:flex;gap:6px;margin-right:12px}.tl i{width:9px;height:9px;border-radius:50%}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.kpi{background:var(--paper-soft);border:1px solid var(--line);border-radius:14px;padding:16px}
+.kpi .lab{font-size:12px;letter-spacing:.16em;color:var(--muted);font-weight:700}
+.kpi b{font-size:33px;display:block;margin:6px 0 3px}
+.kpi small{font-size:13px;color:var(--green);font-weight:600}
+.barchart{background:var(--paper-soft);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px}
+.barchart .cap{display:flex;justify-content:space-between;font-size:14.5px;font-weight:700;margin-bottom:14px}
+.barchart .cap span{color:var(--faint);font-weight:500}
+.bars{display:flex;align-items:flex-end;gap:9px;height:130px}
+.bars i{flex:1;background:#d7dde3;border-radius:6px 6px 0 0}
+.bars i.hot{background:linear-gradient(180deg,#22c55e,#15803d)}
+.fleet{background:var(--paper-soft);border:1px solid var(--line);border-radius:14px;padding:16px}
+.fleet .cap{font-size:15.5px;font-weight:700;margin-bottom:10px}
+.f-row{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.f-row b{font-size:15.5px;display:block}.f-row span{font-size:14px;color:var(--muted)}
+.f-row i{width:8px;height:8px;border-radius:50%}
+/* ---------- slide 9 compare ---------- */
+.cmp{display:grid;grid-template-columns:1fr 90px 1fr;align-items:stretch;gap:0;margin-top:auto}
+.cmp .col{padding:34px 38px}
+.cmp .col .lab{font-size:13px;letter-spacing:.2em;font-weight:800;margin-bottom:8px}
+.cmp .col h3{font-size:30px;font-weight:800;margin-bottom:22px}
+.cmp li{list-style:none;display:flex;align-items:center;gap:14px;margin-bottom:19px;font-size:22px}
+.cmp .bad .lab{color:var(--muted)}
+.cmp .bad li i{width:24px;height:24px;border-radius:50%;background:#eef1f4;color:#9aa3ad;display:grid;place-items:center;font-size:11px}
+.cmp .good{border-color:rgba(22,163,74,.4)}
+.cmp .good .lab{color:var(--green)}
+.cmp .good li i{width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-size:11px}
+.cmp .mid{display:grid;place-items:center}
+.cmp .mid .arr{width:58px;height:58px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-size:22px;box-shadow:0 0 0 8px rgba(22,163,74,.15)}
+/* ---------- slide 10 business ---------- */
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;margin-top:auto}
+.bm{padding:26px;display:flex;flex-direction:column;min-height:330px}
+.bm .tag{align-self:flex-start;font-size:13.5px;font-weight:700;border:1px solid var(--line);border-radius:999px;padding:5px 12px;color:var(--muted)}
+.bm h3{font-size:clamp(24px,2.2vw,34px);font-weight:800;margin:18px 0 8px}
+.bm p{font-size:21px;color:var(--ink-soft);line-height:1.5}
+.bm .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:14px;font-size:15px;color:var(--muted)}
+.bm .foot i{width:28px;height:28px;border-radius:50%;background:var(--paper-soft);border:1px solid var(--line);display:grid;place-items:center}
+.bm.hl{border-color:rgba(22,163,74,.5);background:linear-gradient(180deg,#fff,var(--green-bg))}
+</style>
+<style>
+/* ================= DEMO SLIDE (cinematic 60s) ================= */
+.s-demo{background:#0a0f14;color:#fff}
+.s-demo .sky{position:absolute;inset:0;background:
+  radial-gradient(120% 90% at 50% 110%,rgba(251,146,60,.22),transparent 60%),
+  linear-gradient(180deg,#0e1620 0%,#131a22 55%,#2a2119 100%)}
+.s-demo .topbar{color:#fff}
+.demo-layout{flex:1;display:grid;grid-template-columns:420px 1fr;gap:44px;padding:20px 64px 90px;z-index:2;position:relative;min-height:0}
+.demo-left{display:flex;flex-direction:column;justify-content:center}
+.demo-left h1{color:#fff}
+.demo-left .f{color:#fff}
+.scene-list{margin-top:34px;display:flex;flex-direction:column;gap:10px}
+.scene-item{display:flex;align-items:center;gap:14px;padding:11px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);cursor:pointer;transition:.3s}
+.scene-item .sn{font-size:12px;letter-spacing:.16em;color:#4ade80;font-weight:800;flex:0 0 62px}
+.scene-item b{font-size:19px;font-weight:600;color:#e5e7eb}
+.scene-item.on{background:rgba(34,197,94,.16);border-color:rgba(74,222,128,.55)}
+.scene-item .mini{margin-left:auto;height:3px;width:52px;background:rgba(255,255,255,.15);border-radius:2px;overflow:hidden}
+.scene-item .mini i{display:block;height:100%;width:0;background:#4ade80}
+.demo-stage{position:relative;border-radius:22px;background:#0d1319;border:1px solid rgba(255,255,255,.1);overflow:hidden;box-shadow:0 40px 90px rgba(0,0,0,.5)}
+.stage-chrome{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.08);font-size:12px;color:#94a3b8}
+.stage-chrome .tl i{width:9px;height:9px}
+.stage-chrome .live{margin-left:auto;display:flex;align-items:center;gap:7px;color:#4ade80;font-weight:700;font-size:11px;letter-spacing:.14em}
+.stage-chrome .live i{width:7px;height:7px;border-radius:50%;background:#4ade80;animation:pul 1.4s infinite}
+.scenes{position:absolute;inset:47px 0 132px}
+.scene{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .6s ease;display:grid;place-items:center;padding:26px}
+.scene.on{opacity:1;pointer-events:auto}
+.caption-bar{position:absolute;left:0;right:0;bottom:66px;height:82px;display:flex;align-items:center;gap:18px;padding:0 28px;background:rgba(14,20,26,.92);border-top:1px solid rgba(255,255,255,.08);font-size:23px;color:#f1f5f9;font-weight:600}
+.caption-bar .cap-step{flex:none;font-size:10.5px;letter-spacing:.2em;font-weight:800;color:#04170b;background:#4ade80;border-radius:999px;padding:6px 12px}
+/* transport */
+.transport{position:absolute;left:0;right:0;bottom:0;height:66px;display:flex;align-items:center;gap:16px;padding:0 18px;border-top:1px solid rgba(255,255,255,.08);background:rgba(10,15,20,.7);backdrop-filter:blur(8px)}
+.playbtn{width:42px;height:42px;border-radius:50%;border:0;background:#22c55e;color:#04170b;font-size:16px;cursor:pointer;display:grid;place-items:center;box-shadow:0 0 0 6px rgba(34,197,94,.18);transition:.2s}
+.playbtn:hover{transform:scale(1.06)}
+.tline{flex:1;display:flex;gap:6px}
+.tseg{flex:1;height:6px;border-radius:4px;background:rgba(255,255,255,.14);overflow:hidden;cursor:pointer}
+.tseg i{display:block;height:100%;width:0;background:linear-gradient(90deg,#4ade80,#22c55e)}
+.tclock{font-variant-numeric:tabular-nums;font-size:15px;color:#cbd5e1;font-weight:700;min-width:86px;text-align:right}
+/* scene visuals */
+.hud{width:min(620px,92%);aspect-ratio:16/9;border-radius:18px;position:relative;background:
+  radial-gradient(60% 70% at 60% 40%,rgba(74,222,128,.08),transparent 70%),
+  linear-gradient(150deg,#151d26,#0e141b);border:1px solid rgba(74,222,128,.25);overflow:hidden}
+.hud .reticle{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);width:150px;height:150px;border:1.5px solid rgba(74,222,128,.7);border-radius:50%;animation:ret 3.4s linear infinite}
+.hud .reticle::after{content:"";position:absolute;inset:26px;border:1px dashed rgba(74,222,128,.5);border-radius:50%}
+@keyframes ret{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+.hud .corner{position:absolute;width:26px;height:26px;border-color:#4ade80;border-style:solid;border-width:0}
+.hud .c1{left:14px;top:14px;border-left-width:2px;border-top-width:2px}
+.hud .c2{right:14px;top:14px;border-right-width:2px;border-top-width:2px}
+.hud .c3{left:14px;bottom:14px;border-left-width:2px;border-bottom-width:2px}
+.hud .c4{right:14px;bottom:14px;border-right-width:2px;border-bottom-width:2px}
+.hudtag{position:absolute;background:rgba(6,12,9,.8);border:1px solid rgba(74,222,128,.4);border-radius:10px;padding:10px 15px;font-size:14px;color:#d1fae5;backdrop-filter:blur(4px)}
+.hudtag .lab{display:block;color:#4ade80;font-size:9.5px;letter-spacing:.18em;font-weight:800;margin-bottom:2px}
+.scanline{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#4ade80,transparent);animation:scan 2.6s ease-in-out infinite;opacity:.8}
+@keyframes scan{0%,100%{top:12%}50%{top:86%}}
+/* scene 2 engine schematic */
+.engine{width:min(600px,92%);aspect-ratio:16/9;position:relative;border-radius:18px;background:linear-gradient(150deg,#141b23,#0d1319);border:1px solid rgba(255,255,255,.1);display:grid;place-items:center;overflow:hidden}
+.fan{position:relative;width:230px;height:230px;border-radius:50%;border:2px solid rgba(148,163,184,.4)}
+.fan::before{content:"";position:absolute;inset:34px;border-radius:50%;border:1.5px solid rgba(148,163,184,.3)}
+.fan .hubdot{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:36px;height:36px;border-radius:50%;background:#334155}
+.blade{position:absolute;left:50%;top:50%;width:6px;height:104px;background:rgba(148,163,184,.55);border-radius:4px;transform-origin:50% 0}
+.blade.hot{background:#f59e0b;box-shadow:0 0 18px rgba(245,158,11,.8);animation:bl 1.2s ease-in-out infinite alternate}
+@keyframes bl{from{box-shadow:0 0 8px rgba(245,158,11,.5)}to{box-shadow:0 0 24px rgba(245,158,11,1)}}
+.conf{position:absolute;right:22px;top:22px;background:rgba(6,12,9,.85);border:1px solid rgba(74,222,128,.4);border-radius:12px;padding:12px 16px}
+.conf .lab{color:#4ade80;font-size:9.5px;letter-spacing:.18em;font-weight:800}
+.conf b{display:block;font-size:15px;margin:4px 0 8px;color:#f1f5f9}
+.conf .cm{width:150px;height:5px;background:rgba(255,255,255,.15);border-radius:3px;overflow:hidden}
+.conf .cm i{display:block;height:100%;width:0;background:#4ade80;transition:width 2.2s ease}
+.scene.on .conf .cm i{width:98%}
+/* scene 3 voice */
+.voice{width:min(560px,92%);display:flex;flex-direction:column;gap:14px}
+.bubble{max-width:78%;border-radius:16px;padding:18px 22px;font-size:19px;line-height:1.5;opacity:0;transform:translateY(12px)}
+.scene.on .bubble{animation:pop .5s ease forwards}
+.bubble.q{align-self:flex-end;background:#22c55e;color:#04170b;border-bottom-right-radius:4px}
+.bubble.a{align-self:flex-start;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.12);color:#e5e7eb;border-bottom-left-radius:4px}
+.bubble.a .src{display:block;margin-top:8px;font-size:11px;color:#4ade80;font-weight:700}
+.scene.on .bubble:nth-child(2){animation-delay:1.2s}
+.scene.on .bubble:nth-child(3){animation-delay:3.4s}
+@keyframes pop{to{opacity:1;transform:none}}
+.wave{display:flex;gap:4px;align-items:center;height:26px;align-self:flex-start;margin-left:6px}
+.wave i{width:4px;border-radius:3px;background:#4ade80;animation:wv 1s ease-in-out infinite}
+.wave i:nth-child(1){height:8px}.wave i:nth-child(2){height:18px;animation-delay:.1s}.wave i:nth-child(3){height:24px;animation-delay:.2s}.wave i:nth-child(4){height:14px;animation-delay:.3s}.wave i:nth-child(5){height:20px;animation-delay:.4s}.wave i:nth-child(6){height:9px;animation-delay:.5s}
+@keyframes wv{0%,100%{transform:scaleY(.5)}50%{transform:scaleY(1.15)}}
+/* scene 4 twin */
+.twin{width:min(640px,94%);display:grid;grid-template-columns:1fr 220px;gap:20px;align-items:center}
+.plane-wire{position:relative;aspect-ratio:16/9;border-radius:18px;background:linear-gradient(150deg,#121922,#0d1319);border:1px solid rgba(255,255,255,.1);display:grid;place-items:center;overflow:hidden}
+.plane-wire svg{width:82%;stroke:#4ade80;fill:none;stroke-width:1.6;opacity:.9}
+.plane-wire svg path{stroke-dasharray:900;stroke-dashoffset:900}
+.scene.on .plane-wire svg path{animation:draw 3.4s ease forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.syncs{display:flex;flex-direction:column;gap:10px}
+.sync{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:14px 18px;font-size:17px;color:#e5e7eb;opacity:0;transform:translateX(14px)}
+.scene.on .sync{animation:pop .45s ease forwards}
+.scene.on .sync:nth-child(2){animation-delay:1s}
+.scene.on .sync:nth-child(3){animation-delay:2s}
+.scene.on .sync:nth-child(4){animation-delay:3s}
+.sync i{width:22px;height:22px;border-radius:50%;background:#22c55e;color:#04170b;display:grid;place-items:center;font-size:11px;font-weight:900}
+/* scene 5 approval */
+.approve{width:min(480px,92%);background:#fff;border-radius:20px;color:var(--ink);padding:24px 26px;box-shadow:0 34px 70px rgba(0,0,0,.5)}
+.approve .lab{color:var(--green);font-size:10px;font-weight:800;letter-spacing:.2em}
+.approve h4{font-size:23px;font-weight:800;margin:8px 0 4px}
+.approve small{color:var(--muted);font-size:14.5px}
+.approve .rows{margin:18px 0;border-top:1px solid var(--line)}
+.approve .r{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-size:15.5px}
+.approve .r span{color:var(--muted)}
+.abtn{position:relative;display:block;width:100%;border:0;border-radius:12px;background:#111827;color:#fff;padding:14px;font-size:14px;font-weight:700;overflow:hidden}
+.abtn .fill{position:absolute;inset:0;background:var(--green);width:0}
+.scene.on .abtn .fill{animation:fill 2.4s ease 2s forwards}
+@keyframes fill{to{width:100%}}
+.abtn .t1,.abtn .t2{position:relative;z-index:2}
+.abtn .t2{display:none}
+.scene.on .abtn .t1{animation:hideT 0.1s linear 4.4s forwards}
+.scene.on .abtn .t2{animation:showT 0.1s linear 4.4s forwards}
+@keyframes hideT{to{display:none}}
+@keyframes showT{from{display:none}to{display:inline}}
+.stamp{position:absolute;right:26px;top:22px;border:2.5px solid var(--green);color:var(--green);border-radius:10px;padding:5px 12px;font-weight:900;font-size:13px;letter-spacing:.12em;transform:rotate(-10deg) scale(2.4);opacity:0}
+.scene.on .stamp{animation:stampIn .45s ease 4.6s forwards}
+@keyframes stampIn{to{opacity:1;transform:rotate(-10deg) scale(1)}}
+/* scene 6 passenger mini phone */
+.mini-phone{width:250px;background:#111;border-radius:34px;padding:9px;box-shadow:0 34px 70px rgba(0,0,0,.55);transform:translateY(16px);opacity:0}
+.scene.on .mini-phone{animation:pop .6s ease forwards}
+.mini-phone .scr{background:#fff;border-radius:26px;overflow:hidden;color:var(--ink)}
+.qr-hint{position:absolute;left:50%;top:14px;transform:translateX(-50%);font-size:11.5px;color:#94a3b8;letter-spacing:.12em;font-weight:700}
+.check-big{width:56px;height:56px;margin:18px auto 6px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-size:24px;box-shadow:0 0 0 10px rgba(34,197,94,.15)}
+.mini-phone h5{text-align:center;font-size:15px;font-weight:800;margin-bottom:2px}
+.mini-phone .sub{text-align:center;font-size:11px;color:var(--muted);margin-bottom:12px}
+.mini-phone .p-row{padding:9px 16px;font-size:11.5px}
+.mini-phone .grade-line{display:flex;justify-content:space-between;align-items:center;margin:10px 14px 16px;background:var(--paper-soft);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.mini-phone .grade-line b{font-size:22px}
+.mini-phone .grade-line span{font-size:10px;color:var(--muted);text-align:right}
+</style>
+<style>
+/* ================= NEW SLIDES ================= */
+.ask-intro{margin-top:26px}
+.askgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:56px}
+.askcard{position:relative;background:#fff;border-radius:20px;padding:30px 30px 30px 36px;box-shadow:var(--shadow)}
+.askcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:12px;border-radius:20px 0 0 20px}
+.askcard{border:2.5px solid transparent}
+.ac-blue{border-color:#2563eb}.ac-blue::before{background:#2563eb}
+.ac-cyan{border-color:#0ea5e9}.ac-cyan::before{background:#0ea5e9}
+.ac-pink{border-color:#db2777}.ac-pink::before{background:#db2777}
+.askcard h3{font-size:30px;font-weight:800;letter-spacing:-.01em;margin-bottom:12px}
+.askcard p{font-size:22px;line-height:1.6;color:var(--ink-soft)}
+
+.cmp-table{width:100%;border-collapse:collapse;font-size:21px}
+.cmp-table th,.cmp-table td{padding:15px 20px;text-align:center;border-bottom:1px solid var(--line)}
+.cmp-table th{font-size:16px;color:var(--muted);font-weight:700;background:var(--paper-soft)}
+.cmp-table td:first-child,.cmp-table th:first-child{text-align:left;font-weight:600;color:var(--ink)}
+.cmp-table tr:last-child td{border-bottom:0}
+.cmp-table .us{background:var(--green-bg);color:var(--green-deep);font-weight:800}
+.cmp-table th.us{color:var(--green-deep);font-size:18px}
+
+/* stats */
+.statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:auto}
+.stat{padding:30px 28px;text-align:left;position:relative;overflow:hidden}
+.stat .big{font-size:clamp(44px,4.4vw,68px);font-weight:900;letter-spacing:-.03em;color:var(--ink);font-variant-numeric:tabular-nums}
+.stat .big em{font-style:normal;color:var(--green)}
+.stat .cap{font-size:21.5px;font-weight:700;margin-top:6px}
+.stat .sub{font-size:17.5px;color:var(--muted);margin-top:4px;line-height:1.45}
+.stat::after{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,#22c55e,#15803d)}
+.stat-note{margin-top:26px;font-size:16px;color:var(--faint)}
+.statrow2{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:24px}
+/* market */
+.market{display:grid;grid-template-columns:1fr 520px;gap:60px;margin-top:auto;align-items:center}
+.mkt-circles{position:relative;width:520px;height:480px}
+.mc{position:absolute;left:50%;border-radius:50%;transform:translateX(-50%)}
+.mc.tam{bottom:0;width:460px;height:460px;background:radial-gradient(circle at 50% 30%,#f0fdf4,#dcfce7);border:1.5px solid rgba(22,163,74,.35)}
+.mc.sam{bottom:0;width:300px;height:300px;background:radial-gradient(circle at 50% 30%,#bbf7d0,#86efac);border:1.5px solid rgba(22,163,74,.45)}
+.mc.som{bottom:0;width:160px;height:160px;background:radial-gradient(circle at 40% 25%,#34d399,#15803d);box-shadow:0 14px 34px rgba(21,128,61,.35)}
+.mc-lab{position:absolute;left:50%;transform:translateX(-50%);text-align:center}
+.mc-lab .t{font-size:13px;font-weight:800;letter-spacing:.2em}
+.mc-lab .v{font-size:26px;font-weight:900;letter-spacing:-.02em}
+.mc-lab.l-tam{top:26px;color:var(--green-deep)}
+.mc-lab.l-sam{bottom:206px;color:#166534}
+.mc-lab.l-som{bottom:66px;color:#fff}
+.mc-lab.l-som .t{opacity:.85}
+.mkt-legend{display:flex;flex-direction:column;gap:16px;margin-top:30px}
+.ml{display:flex;gap:16px;align-items:flex-start}
+.ml i{flex:0 0 14px;height:14px;border-radius:4px;margin-top:4px}
+.ml b{font-size:23px;display:block}.ml span{font-size:19px;color:var(--ink-soft);line-height:1.5}
+/* ask */
+.ask-wrap{display:grid;grid-template-columns:440px 1fr;gap:60px;margin-top:auto;align-items:center}
+.ask-num .lab{font-size:13px;letter-spacing:.28em;font-weight:800;color:var(--green)}
+.ask-num .amount{font-size:clamp(70px,7.5vw,116px);font-weight:900;letter-spacing:-.04em;line-height:1;margin:10px 0 8px}
+.ask-num .amount em{font-style:normal;color:var(--green)}
+.ask-num .runway{font-size:16px;color:var(--ink-soft)}
+.alloc{display:flex;flex-direction:column;gap:16px}
+.al{display:grid;grid-template-columns:220px 1fr 64px;align-items:center;gap:16px;font-size:19px}
+.al b{font-weight:700}
+.al .track{height:12px;border-radius:8px;background:#eef1f4;overflow:hidden}
+.al .track i{display:block;height:100%;border-radius:8px;background:linear-gradient(90deg,#22c55e,#15803d)}
+.al .pct{font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
+.milestones{display:flex;gap:14px;margin-top:30px;flex-wrap:wrap}
+/* resources */
+.resgrid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:auto}
+.rescol{padding:26px 30px}
+.rescol h3{font-size:22px;font-weight:800;display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.rescol h3 i{width:34px;height:34px;border-radius:10px;background:var(--green-soft);display:grid;place-items:center;font-size:15px}
+.rlink{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--line);text-decoration:none;color:var(--ink)}
+.rlink:last-child{border-bottom:0}
+.rlink b{font-size:19.5px;display:block}
+.rlink span{font-size:17px;color:var(--muted)}
+.rlink .go{flex:0 0 auto;font-size:14.5px;color:var(--green);font-weight:800}
+.rlink:hover b{color:var(--green-deep)}
+/* team */
+.teamgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:auto}
+.tm{padding:28px 24px;text-align:center}
+.tm .avatar{width:84px;height:84px;margin:0 auto 16px;border-radius:50%;display:grid;place-items:center;font-size:26px;font-weight:800;color:#fff;background:linear-gradient(135deg,#22c55e,#0f766e)}
+.tm:nth-child(2) .avatar{background:linear-gradient(135deg,#0ea5e9,#1d4ed8)}
+.tm:nth-child(3) .avatar{background:linear-gradient(135deg,#f59e0b,#dc2626)}
+.tm:nth-child(4) .avatar{background:linear-gradient(135deg,#8b5cf6,#6d28d9)}
+.tm b{font-size:22px;display:block}
+.tm .role{font-size:15px;color:var(--green);font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin:5px 0 10px}
+.tm p{font-size:19px;color:var(--ink-soft);line-height:1.5}
+/* closing */
+.s-close{background:#fcfcfd}
+.s-close .slide-body{justify-content:center;align-items:center;text-align:center}
+.s-close h1{font-size:clamp(38px,4.6vw,66px)}
+.s-close .mark{width:44px;height:44px;border-radius:12px;font-size:18px;margin:52px auto 14px}
+.s-close .thanks{color:var(--faint);font-size:15px;margin-top:6px}
+.s-close .contact{margin-top:22px;display:flex;gap:12px;justify-content:center}
+@media (max-width:1100px){
+  .slide-body{padding:44px 36px}
+  .grid3,.grid4,.statgrid,.teamgrid{grid-template-columns:repeat(2,1fr)}
+  .market,.ask-wrap,.demo-layout{grid-template-columns:1fr}
+  .orbit-wrap,.map-wrap{display:none}
+  .s-work .glasses-side{display:none}
+  .s-work .steps-side{position:static;width:100%;padding:44px 36px}
+}
+</style>
+</head>
+<body>
+<div class="rotate-note"><div><span class="ph">📱</span><b>Rotate your device</b><br>This presentation is landscape 16:9.</div></div>
+<div class="stage-wrap"><div class="deck" id="deck">
+
+<!-- 01 · COVER -->
+<section class="slide s-cover on">
+  <div class="bg"></div>
+  <div class="slide-body">
+    <div class="eyebrow">A story about trust</div>
+    <h1 class="display">We trust <em class="f">every flight</em><span style="color:var(--ink)">.</span></h1>
+    <p class="lede">But who supports the people responsible for keeping us safe?</p>
+    <div class="who">
+      <div class="mark">A</div>
+      <div><b>AeroMind</b><span>AI Maintenance OS · for sustainable aviation</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 · HIDDEN HEROES -->
+<section class="slide s-heroes">
+  <div class="photo"></div>
+  <svg class="tech-art" viewBox="0 0 760 640" aria-hidden="true">
+    <defs>
+      <linearGradient id="bgH" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#26313f"/><stop offset="1" stop-color="#10161e"/></linearGradient>
+      <radialGradient id="spot" cx="40%" cy="16%" r="80%"><stop offset="0" stop-color="rgba(255,238,205,.32)"/><stop offset=".5" stop-color="rgba(255,238,205,.06)"/><stop offset="1" stop-color="transparent"/></radialGradient>
+      <linearGradient id="cowl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d6b7c"/><stop offset=".55" stop-color="#2c3542"/><stop offset="1" stop-color="#161d26"/></linearGradient>
+      <linearGradient id="suit" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e0d6c4"/><stop offset="1" stop-color="#b3a48e"/></linearGradient>
+      <linearGradient id="suit2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9db3c8"/><stop offset="1" stop-color="#6c8199"/></linearGradient>
+    </defs>
+    <rect width="760" height="640" rx="26" fill="url(#bgH)"/>
+    <rect width="760" height="640" rx="26" fill="url(#spot)"/>
+    <g opacity=".4" stroke="#3d4b5d" stroke-width="4"><line x1="110" y1="0" x2="110" y2="640"/><line x1="655" y1="0" x2="655" y2="640"/></g>
+    <rect x="0" y="562" width="760" height="78" fill="#0b1016" opacity=".8"/>
+    <path d="M30 118 L760 58 L760 118 L50 168 Z" fill="#222c38"/>
+    <!-- engine -->
+    <g>
+      <ellipse cx="300" cy="325" rx="205" ry="196" fill="url(#cowl)"/>
+      <ellipse cx="300" cy="325" rx="160" ry="153" fill="#131a23"/>
+      <ellipse cx="300" cy="325" rx="143" ry="137" fill="#1d2733"/>
+      <g transform="translate(300 325)" stroke="#48586c" stroke-width="9" stroke-linecap="round" opacity=".95">
+        <line x1="0" y1="-122" x2="0" y2="-38"/><line x1="106" y1="-61" x2="33" y2="-19"/><line x1="106" y1="61" x2="33" y2="19"/>
+        <line x1="0" y1="122" x2="0" y2="38"/><line x1="-106" y1="61" x2="-33" y2="19"/><line x1="-106" y1="-61" x2="-33" y2="-19"/>
+        <line x1="75" y1="-96" x2="24" y2="-30"/><line x1="122" y1="0" x2="38" y2="0"/><line x1="75" y1="96" x2="24" y2="30"/>
+        <line x1="-75" y1="96" x2="-24" y2="30"/><line x1="-122" y1="0" x2="-38" y2="0"/><line x1="-75" y1="-96" x2="-24" y2="-30"/>
+      </g>
+      <circle cx="300" cy="325" r="36" fill="#0d1218" stroke="#525f70" stroke-width="3"/>
+    </g>
+    <!-- engineer 1: flashlight + clipboard, cap, no glasses -->
+    <g transform="translate(540 262)">
+      <path d="M6 116 Q-42 138 -50 212 L-50 372 L150 372 L150 212 Q144 138 94 116 Z" fill="url(#suit)"/>
+      <rect x="16" y="116" width="68" height="120" rx="10" fill="#28323f"/>
+      <circle cx="50" cy="52" r="52" fill="#e6b78c"/>
+      <path d="M-8 34 Q-4 -26 50 -26 Q104 -26 108 34 L108 26 L-8 26 Z" fill="#1d2733"/>
+      <rect x="-16" y="24" width="132" height="15" rx="7.5" fill="#141b23"/>
+      <ellipse cx="34" cy="52" rx="5" ry="6" fill="#3d2c1e"/><ellipse cx="68" cy="52" rx="5" ry="6" fill="#3d2c1e"/>
+      <path d="M30 86 Q50 96 70 86" stroke="#ad7b52" stroke-width="4.5" fill="none"/>
+      <!-- arm holding flashlight toward engine -->
+      <path d="M-50 218 Q-108 232 -138 268 L-116 292 Q-88 260 -42 250 Z" fill="#c9bca6"/>
+      <rect x="-186" y="252" width="58" height="20" rx="10" fill="#3a4450" transform="rotate(18 -156 262)"/>
+      <path d="M-186 268 L-262 306 L-256 236 Z" fill="rgba(255,240,200,.16)"/>
+      <!-- clipboard in other hand -->
+      <path d="M150 224 Q186 246 190 292 L160 300 Q154 262 134 246 Z" fill="#c9bca6"/>
+      <rect x="152" y="288" width="72" height="96" rx="8" fill="#8b6f47" transform="rotate(9 188 336)"/>
+      <rect x="160" y="298" width="56" height="78" rx="4" fill="#f5efdf" transform="rotate(9 188 336)"/>
+      <g stroke="#94a3b8" stroke-width="3.5" transform="rotate(9 188 336)"><line x1="168" y1="314" x2="208" y2="314"/><line x1="168" y1="328" x2="208" y2="328"/><line x1="168" y1="342" x2="200" y2="342"/><line x1="168" y1="356" x2="204" y2="356"/></g>
+    </g>
+    <!-- engineer 2: kneeling with paper manual, no glasses -->
+    <g transform="translate(112 356)">
+      <path d="M20 60 Q-16 74 -22 128 L-22 196 L128 196 L128 128 Q124 76 92 60 Z" fill="url(#suit2)"/>
+      <circle cx="56" cy="22" r="40" fill="#d9a578"/>
+      <path d="M14 6 Q18 -36 56 -36 Q94 -36 98 6 L98 0 L14 0 Z" fill="#2d3947"/>
+      <ellipse cx="44" cy="24" rx="4" ry="5" fill="#3d2c1e"/><ellipse cx="70" cy="24" rx="4" ry="5" fill="#3d2c1e"/>
+      <path d="M40 48 Q56 55 72 48" stroke="#a06f48" stroke-width="4" fill="none"/>
+      <!-- open paper manual -->
+      <path d="M-58 150 L18 128 L18 208 L-58 228 Z" fill="#f3ecd9"/>
+      <path d="M96 128 L170 150 L170 228 L96 208 Z" fill="#efe6d0"/>
+      <path d="M18 128 L57 138 L96 128 L96 208 L57 218 L18 208 Z" fill="#faf6ea"/>
+      <g stroke="#9aa4ae" stroke-width="3"><line x1="-44" y1="160" x2="6" y2="147"/><line x1="-44" y1="176" x2="6" y2="163"/><line x1="-44" y1="192" x2="0" y2="180"/><line x1="110" y1="147" x2="158" y2="160"/><line x1="110" y1="163" x2="158" y2="176"/></g>
+      <path d="M-22 150 Q-40 166 -44 196 L-22 200 Z" fill="#87a0b8"/>
+      <path d="M128 150 Q148 166 152 196 L128 200 Z" fill="#87a0b8"/>
+    </g>
+    <!-- story callouts -->
+    <g transform="translate(36 30)">
+      <rect width="292" height="64" rx="14" fill="rgba(10,14,18,.85)" stroke="rgba(148,163,184,.5)" stroke-width="2"/>
+      <circle cx="26" cy="32" r="6" fill="#f59e0b"/>
+      <text x="44" y="27" fill="#fbbf24" font-family="Inter,sans-serif" font-size="13" font-weight="800" letter-spacing="2">TONIGHT · 02:30 AM</text>
+      <text x="44" y="49" fill="#e5e7eb" font-family="Inter,sans-serif" font-size="16" font-weight="600">Flashlights, paper manuals, memory</text>
+    </g>
+    <g transform="translate(440 508)">
+      <rect width="284" height="64" rx="14" fill="rgba(10,14,18,.85)" stroke="rgba(148,163,184,.5)" stroke-width="2"/>
+      <text x="22" y="27" fill="#fbbf24" font-family="Inter,sans-serif" font-size="13" font-weight="800" letter-spacing="2">THE HIDDEN HEROES</text>
+      <text x="22" y="49" fill="#e5e7eb" font-family="Inter,sans-serif" font-size="16" font-weight="600">Checks like this happen every night</text>
+    </g>
+  </svg>
+  <svg class="hangar" viewBox="0 0 600 500" preserveAspectRatio="xMidYMid slice">
+    <defs><linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b3644"/><stop offset="1" stop-color="#151c26"/></linearGradient></defs>
+    <rect width="600" height="500" fill="url(#hg)" opacity=".5"/>
+    <g stroke="#3b4756" stroke-width="3" opacity=".7">
+      <line x1="80" y1="0" x2="80" y2="500"/><line x1="200" y1="0" x2="200" y2="500"/><line x1="320" y1="0" x2="320" y2="500"/><line x1="440" y1="0" x2="440" y2="500"/>
+    </g>
+    <g fill="#e5b514" opacity=".55"><rect x="470" y="60" width="14" height="380"/><rect x="500" y="120" width="10" height="320"/></g>
+    <ellipse cx="180" cy="330" rx="190" ry="120" fill="#0c1117" opacity=".85"/>
+    <ellipse cx="180" cy="330" rx="150" ry="92" fill="#1a222c"/>
+    <ellipse cx="180" cy="330" rx="60" ry="40" fill="#0c1117"/>
+  </svg>
+  <div class="slide-body">
+    <div class="eyebrow" style="color:#4ade80">The hidden heroes</div>
+    <h1 class="display">The people protecting<br><em class="f">every flight</em><span>.</span></h1>
+    <div class="crumbs">
+      <span>Passenger</span><i></i><span>Aircraft</span><i></i><span>Technician</span><i></i><span>Knowledge</span><i></i><span>Safety</span>
+    </div>
+  </div>
+</section>
+
+<!-- 03 · SUSTAINABILITY PROBLEM -->
+<section class="slide">
+  <div class="grad-mist"></div>
+  <div class="topbar"><div class="brand"><div class="mark">A</div>AeroMind</div><div class="pageno"><b>03</b> / 19</div></div>
+  <div class="slide-body" style="justify-content:center;max-width:640px">
+    <div class="eyebrow">The sustainability problem</div>
+    <h1 class="display">Invisible waste,<br>flight after flight.</h1>
+    <p class="lede">Aviation's carbon story doesn't end at the engine. It flows through every workflow that keeps aircraft in the air.</p>
+  </div>
+  <div class="orbit-wrap">
+    <div class="orbit o1"></div><div class="orbit o2"></div><div class="orbit o3"></div><div class="orbit o4"></div>
+    <div class="core"><div><small>AVIATION</small><br><b>Waste</b></div></div>
+    <div class="sat" style="left:-6%;top:36%"><b>Unnecessary replacement</b><span>Premature parts</span></div>
+    <div class="sat" style="right:6%;top:6%;animation-delay:.8s"><b>Lost knowledge</b><span>Retiring experts</span></div>
+    <div class="sat" style="right:-8%;top:38%;animation-delay:1.6s"><b>Paper manuals</b><span>Millions of pages</span></div>
+    <div class="sat" style="left:16%;bottom:2%;animation-delay:2.4s"><b>Disconnected systems</b><span>Data silos</span></div>
+    <div class="sat" style="right:2%;bottom:4%;animation-delay:3.2s"><b>Repeated inspections</b><span>Duplicated hours</span></div>
+  </div>
+  <div class="footnote">AI Maintenance OS · Sustainable Aviation</div>
+</section>
+
+<!-- 04 · THREE CHALLENGES -->
+<section class="slide">
+  <div class="topbar"><div class="brand"><div class="mark">A</div>AeroMind</div><div class="pageno"><b>04</b> / 19</div></div>
+  <div class="slide-body">
+    <div class="eyebrow">Three challenges</div>
+    <h1 class="display">What sustainable aviation<br>is really up against.</h1>
+    <div class="grid3" style="margin-top:56px">
+      <div class="card gcard"><div class="ico">👤</div><h3>People</h3><p>Master technicians retire. Their expertise leaves with them.</p></div>
+      <div class="card gcard"><div class="ico">📚</div><h3>Knowledge</h3><p>Manuals, notes and tribal wisdom live in disconnected silos.</p></div>
+      <div class="card gcard"><div class="ico">🔒</div><h3>Trust</h3><p>Passengers never see what actually keeps them safe.</p></div>
+    </div>
+  </div>
+  <div class="footnote">AI Maintenance OS · Sustainable Aviation</div>
+</section>
+
+<!-- 05 · IMPACT IN NUMBERS (NEW) -->
+<section class="slide">
+  <div class="topbar"><div class="brand"><div class="mark">A</div>AeroMind</div><div class="pageno"><b>05</b> / 19</div></div>
+  <div class="slide-body">
+    <div class="eyebrow">Impact in numbers</div>
+    <h1 class="display" style="font-size:clamp(34px,4vw,58px)">The statistics behind <em class="f">the story</em>.</h1>
+    <div class="statgrid" style="margin-top:44px">
+      <div class="card stat"><div class="big" data-count="30" data-suffix="%">0%</div><div class="cap">Less unscheduled downtime</div><div class="sub">Predictive maintenance vs. reactive programs (industry benchmark range 20–40%)</div></div>
+      <div class="card stat"><div class="big" data-count="1.2" data-suffix="M" data-dec="1">0M</div><div class="cap">Paper pages eliminated / mo</div><div class="sub">Per 50-aircraft fleet on fully digital AeroMind workflows</div></div>
+      <div class="card stat"><div class="big" data-count="312" data-suffix=" t">0 t</div><div class="cap">CO₂ avoided per quarter</div><div class="sub">Fewer premature part replacements, ferry flights and duplicated inspections</div></div>
+      <div class="card stat"><div class="big" data-count="98.4" data-suffix="%" data-dec="1">0%</div><div class="cap">Fleet health visibility</div><div class="sub">Live digital-twin coverage across the connected fleet</div></div>
+    </div>
+    <div class="statrow2">
+      <div class="card stat"><div class="big" data-count="40" data-suffix="%">0%</div><div class="cap">Faster inspections</div><div class="sub">MR-guided workflows vs. paper-based checklists</div></div>
+      <div class="card stat"><div class="big"><em data-count="27" data-suffix="%">0%</em></div><div class="cap">Of AMTs retire this decade</div><div class="sub">AeroMind captures their expertise before it walks out the door</div></div>
+      <div class="card stat"><div class="big" data-count="12.4" data-suffix=" kg" data-dec="1">0 kg</div><div class="cap">CO₂ saved per turnaround</div><div class="sub">Shown transparently to every passenger at their seat</div></div>
+    </div>
+    <div class="stat-note">Figures are pilot-fleet projections and industry benchmarks; sources on the Research &amp; Resources slide.</div>
+  </div>
+</section>
+
+<!-- 06 · INTRODUCING AEROMIND -->
+<section class="slide">
+  <div class="grad-mist"></div>
+  <div class="topbar"><div class="brand"><div class="mark">A</div>AeroMind</div><div class="pageno"><b>06</b> / 19</div></div>
+  <div class="slide-body" style="justify-content:center;max-width:620px">
+    <div class="eyebrow">Introducing</div>
+    <h1 class="display" style="color:var(--green)">AeroMind</h1>
+    <p class="lede" style="max-width:30ch">The AI Maintenance Operating System that unifies aircraft, people and knowledge — on the MR devices you already trust.</p>
+    <div class="pillrow">
+      <span class="chip">HoloLens</span><span class="chip">Magic Leap</span><span class="chip">Vision Pro Enterprise</span><span class="chip">OpenXR</span>
+    </div>
+  </div>
+  <div class="map-wrap">
+    <svg viewBox="0 0 600 600">
+      <line x1="300" y1="300" x2="310" y2="120"/><line x1="300" y1="300" x2="200" y2="150"/>
+      <line x1="300" y1="300" x2="470" y2="200"/><line x1="300" y1="300" x2="120" y2="320"/>
+      <line x1="300" y1="300" x2="500" y2="410"/><line x1="300" y1="300" x2="180" y2="500"/><line x1="300" y1="300" x2="380" y2="530"/>
+    </svg>
+    <div class="map-core"><div><small>PLATFORM</small><b>AeroMind</b></div></div>
+    <div class="node" style="left:49%;top:16%">Aircraft</div>
+    <div class="node" style="left:26%;top:21%">MR Glasses</div>
+    <div class="node" style="right:8%;top:30%">Manuals</div>
+    <div class="node" style="left:12%;top:51%">Passenger</div>
+    <div class="node" style="right:6%;top:64%">Digital Twin</div>
+    <div class="node" style="left:24%;bottom:16%">Sensors</div>
+    <div class="node" style="left:55%;bottom:10%">Drone</div>
+  </div>
+  <div class="footnote">AI Maintenance OS · Sustainable Aviation</div>
+</section>
+
+<!-- 07 · HOW IT WORKS -->
+<section class="slide s-work">
+  <div class="glasses-side">
+    <div class="g-visual">
+      <svg viewBox="0 0 640 380" class="mrg" aria-hidden="true">
+        <defs>
+          <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a4350"/><stop offset=".5" stop-color="#151a21"/><stop offset="1" stop-color="#05070a"/></linearGradient>
+          <linearGradient id="lens" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="rgba(190,215,235,.85)"/><stop offset=".5" stop-color="rgba(140,170,195,.45)"/><stop offset="1" stop-color="rgba(90,120,150,.35)"/></linearGradient>
+          <linearGradient id="lensG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="rgba(74,222,128,.35)"/><stop offset="1" stop-color="transparent"/></linearGradient>
+        </defs>
+        <g transform="rotate(-7 320 190)">
+          <path d="M70 150 Q70 110 115 108 L268 104 Q296 103 300 128 L302 142 L338 142 L340 128 Q344 103 372 104 L525 108 Q570 110 570 150 L566 226 Q563 268 518 270 L392 274 Q352 275 344 236 L340 214 L300 214 L296 236 Q288 275 248 274 L122 270 Q77 268 74 226 Z" fill="url(#frame)"/>
+          <path d="M96 146 Q97 126 120 125 L262 121 Q280 121 281 140 L278 218 Q276 246 250 247 L136 244 Q102 243 100 212 Z" fill="url(#lens)"/>
+          <path d="M96 146 Q97 126 120 125 L262 121 Q280 121 281 140 L278 218 Q276 246 250 247 L136 244 Q102 243 100 212 Z" fill="url(#lensG)"/>
+          <path d="M359 140 Q360 121 378 121 L520 125 Q543 126 544 146 L540 212 Q538 243 504 244 L390 247 Q364 246 362 218 Z" fill="url(#lens)"/>
+          <path d="M359 140 Q360 121 378 121 L520 125 Q543 126 544 146 L540 212 Q538 243 504 244 L390 247 Q364 246 362 218 Z" fill="url(#lensG)"/>
+          <path d="M115 128 L250 124" stroke="rgba(255,255,255,.75)" stroke-width="5" stroke-linecap="round" opacity=".7"/>
+          <path d="M378 126 L512 130" stroke="rgba(255,255,255,.6)" stroke-width="5" stroke-linecap="round" opacity=".6"/>
+          <rect x="300" y="140" width="40" height="18" rx="9" fill="#0a0d12"/>
+          <path d="M70 150 L28 168 Q14 174 18 190 L24 208" stroke="#10141a" stroke-width="16" fill="none" stroke-linecap="round"/>
+          <path d="M570 150 L612 168 Q626 174 622 190 L616 208" stroke="#10141a" stroke-width="16" fill="none" stroke-linecap="round"/>
+          <circle cx="118" cy="118" r="7" fill="#05070a"/><circle cx="118" cy="118" r="3" fill="#4ade80"/>
+          <rect x="470" y="252" width="60" height="10" rx="5" fill="#22c55e" opacity=".9"/>
+          <!-- holographic overlay projected from lens -->
+          <g opacity=".95">
+            <path d="M200 118 L165 60" stroke="rgba(74,222,128,.55)" stroke-width="2" stroke-dasharray="5 5"/>
+            <rect x="70" y="16" width="196" height="46" rx="12" fill="rgba(8,14,10,.85)" stroke="rgba(74,222,128,.55)" stroke-width="2"/>
+            <circle cx="92" cy="39" r="5" fill="#4ade80"/>
+            <text x="106" y="34" fill="#4ade80" font-family="Inter,sans-serif" font-size="11" font-weight="800" letter-spacing="2">AI OVERLAY</text>
+            <text x="106" y="52" fill="#e5e7eb" font-family="Inter,sans-serif" font-size="13" font-weight="600">Fan blade #7 · inspect</text>
+          </g>
+        </g>
+      </svg>
+      <div class="tagfloat" style="left:-4%;top:-6%"><span class="pulse"></span><b>Scanning · Engine 2</b></div>
+      <div class="tagfloat" style="left:2%;bottom:-10%"><span class="lab">AI DETECTION</span><b>Fan blade #7 · 98% confidence</b></div>
+    </div>
+  </div>
+  <div class="pageno" style="position:absolute;right:40px;top:28px"><b>07</b> / 19</div>
+  <div class="steps-side">
+    <div class="eyebrow">How AeroMind works</div>
+    <h1 class="display" style="font-size:clamp(34px,3.6vw,54px)">One workflow.<br><em class="f">Everything connected.</em></h1>
+    <div class="step"><div class="n">1</div><div><b>Sees</b><span>MR overlay highlights the component</span></div></div>
+    <div class="step"><div class="n">2</div><div><b>Asks</b><span>Voice AI answers from the manual</span></div></div>
+    <div class="step"><div class="n">3</div><div><b>Verifies</b><span>Digital twin updates in real time</span></div></div>
+    <div class="step"><div class="n">4</div><div><b>Shares</b><span>Dashboard + passenger app in sync</span></div></div>
+  </div>
+</section>
+
+<!-- 08 · MARKET (NEW) -->
+<section class="slide">
+  <div class="grad-mist"></div>
+  <div class="topbar"><div class="brand"><div class="mark">A</div>AeroMind</div><div class="pageno"><b>08</b> / 19</div></div>
+  <div class="slide-body">
+    <div class="eyebrow">Market opportunity</div>
+    <h1 class="display" style="font-size:clamp(34px,4vw,58px)">A market ready <em class="f">for take-off</em>.</h1>
+    <div class="market">
+      <div>
+        <div class="mkt-legend">
+          <div class="ml"><i style="background:#dcfce7;border:1px solid rgba(22,163,74,.4)"></i><div><b>TAM — $110B+ · Global MRO market</b><span>Total commercial aviation maintenance, repair and overhaul spend, growing ~3% annually toward 2030.</span></div></div>
+          <div class="ml"><i style="background:#86efac"></i><div><b>SAM — $14B · Digital MRO software &amp; AR/AI tooling</b><span>Digitized maintenance workflows, predictive analytics, digital twins and MR-assisted operations.</span></div></div>
+          <div class="ml"><i style="background:linear-gradient(135deg,#34d399,#15803d)"></i><div><b>SOM — $420M · Beachhead in 5 years</b><span>3% of SAM: European + Gulf carriers and MRO providers with existing MR hardware fleets.</span></div></div>
+        </div>
+      </div>
+      <div class="mkt-circles">
+        <div class="mc tam"></div><div class="mc sam"></div><div class="mc som"></div>
+        <div class="mc-lab l-tam"><div class="t">TAM</div><div class="v">$110B+</div></div>
+        <div class="mc-lab l-sam"><div class="t">SAM</div><div class="v">$14B</div></div>
+        <div class="mc-lab l-som"><div class="t">SOM</div><div class="v">$420M</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="footnote">AI Maintenance OS · Sustainable Aviation</div>
+</section>
+
+<!-- 09 · PASSENGER EXPERIENCE -->
+<section class="slide">
+  <div class="grad-mist"></div>
+  <div class="topbar"><div class="brand"><div class="mark">A</div>AeroMind</div><div class="pageno"><b>09</b> / 19</div></div>
+  <div class="slide-body" style="flex-direction:row;align-items:center;gap:70px">
+    <div style="max-width:480px">
+      <div class="eyebrow">Passenger experience</div>
+      <h1 class="display" style="font-size:clamp(36px,4vw,60px)">Trust, made <em class="f">visible</em>.</h1>
+      <p class="lede">A single QR scan turns silent maintenance into a transparent, sustainable story — from technician to seat.</p>
+      <div class="pillrow">
+        <span class="chip"><span class="dot"></span>Inspection verified</span>
+        <span class="chip"><span class="dot"></span>Engineer signed</span>
+        <span class="chip"><span class="dot"></span>Sustainability score</span>
+        <span class="chip"><span class="dot"></span>Report a concern</span>
+      </div>
+      <div class="qr-card">
+        <svg viewBox="0 0 29 29" class="qr" shape-rendering="crispEdges">
+          <rect width="29" height="29" fill="#fff"/>
+          <path fill="#111827" d="M0 0h7v7H0zM22 0h7v7h-7zM0 22h7v7H0zM2 2h3v3H2zM24 2h3v3h-3zM2 24h3v3H2zM9 0h1v2H9zM11 0h2v1h-2zM14 0h1v3h-1zM16 0h1v1h-1zM18 0h2v2h-2zM9 3h2v1H9zM12 2h1v2h-1zM16 2h1v2h-1zM19 3h1v1h-1zM9 5h1v2H9zM11 5h1v1h-1zM13 5h2v1h-2zM17 5h1v2h-1zM19 5h2v1h-2zM10 7h1v1h-1zM12 7h1v2h-1zM15 7h2v1h-2zM19 7h1v1h-1zM0 9h2v1H0zM3 9h2v2H3zM6 9h1v1H6zM8 9h2v1H8zM11 9h1v1h-1zM13 9h3v1h-3zM17 9h2v2h-2zM20 9h2v1h-2zM23 9h1v2h-1zM25 9h2v1h-2zM28 9h1v2h-1zM1 11h1v2H1zM5 11h2v1H5zM8 11h1v2H8zM10 11h2v1h-2zM14 11h1v2h-1zM16 11h1v1h-1zM20 11h1v2h-1zM22 12h1v1h-1zM25 11h1v2h-1zM27 11h1v1h-1zM0 13h1v1H0zM2 13h2v1H2zM6 13h1v2H6zM9 13h1v1H9zM11 13h2v2h-2zM15 13h1v1h-1zM17 13h2v1h-2zM21 13h2v2h-2zM24 13h1v1h-1zM26 13h2v2h-2zM1 15h2v1H1zM4 15h1v2H4zM7 15h2v1H7zM10 15h1v1h-1zM13 15h2v1h-2zM16 15h2v2h-2zM19 15h1v1h-1zM24 15h2v1h-2zM28 15h1v2h-1zM0 17h2v2H0zM3 17h1v1H3zM5 17h2v1H5zM8 17h2v2H8zM12 17h1v1h-1zM14 17h2v1h-2zM19 17h2v2h-2zM22 17h1v1h-1zM25 17h1v1h-1zM27 17h1v2h-1zM2 19h1v1H2zM5 19h1v1H5zM11 19h2v1h-2zM14 19h1v2h-1zM16 19h2v1h-2zM21 19h1v1h-1zM23 19h2v2h-2zM26 19h1v1h-1zM9 21h2v1H9zM12 21h1v2h-1zM15 21h2v2h-2zM18 21h1v1h-1zM20 21h1v2h-1zM26 21h2v1h-2zM28 21h1v3h-1zM9 23h1v2H9zM11 23h1v1h-1zM13 24h2v1h-2zM17 23h2v2h-2zM22 23h1v2h-1zM24 23h2v1h-2zM10 26h1v1h-1zM12 26h2v2h-2zM15 26h1v1h-1zM17 27h2v1h-2zM20 26h2v1h-2zM23 26h1v2h-1zM25 27h2v1h-2z"/>
+        </svg>
+        <div class="qr-txt"><span class="lab">PASSENGER FEEDBACK</span><b>Scan at your seat</b><span>Rate your flight · report a cabin issue</span></div>
+      </div>
+    </div>
+    <div style="position:relative;margin-left:auto">
+      <div class="reward" style="right:-60px;top:-8px"><span class="lab">+120 PTS</span>Sustainability reward</div>
+      <div class="phone"><div class="scr">
+        <div class="p-head">
+          <div class="st"><span>9:41</span><span>●●● 5G</span></div>
+          <div class="fl">FLIGHT AF 214 · A320</div>
+          <h4>Your aircraft is ready.</h4>
+          <small>Inspected · verified · signed</small>
+        </div>
+        <div class="p-row"><span>Inspection</span><b>Completed 07:14</b></div>
+        <div class="p-row"><span>Engineer</span><b>M. Dupont · ID 8821</b></div>
+        <div class="p-row"><span>Digital twin</span><b>In sync</b></div>
+        <div class="p-sus">
+          <div class="lab">SUSTAINABILITY</div>
+          <div class="row"><div class="grade">A+</div><small>−12.4 kg CO₂<br>vs. traditional check</small></div>
+          <div class="meter"><i></i></div>
+        </div>
+        <div class="p-btn">Report a cabin issue</div>
+      </div></div>
+    </div>
+  </div>
+  <div class="footnote">AI Maintenance OS · Sustainable Aviation</div>
+</section>
+
+<!-- 10 · MANAGER DASHBOARD -->
+<section class="slide">
+  <div class="topbar"><div class="brand"><div class="mark">A</div>AeroMind</div><div class="pageno"><b>10</b> / 19</div></div>
+  <div class="slide-body">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end">
+      <div>
+        <div class="eyebrow">Manager dashboard</div>
+        <h1 class="display" style="font-size:clamp(34px,3.8vw,56px)">Every aircraft.<br><em class="f">One glass pane.</em></h1>
+      </div>
+      <div class="pillrow" style="margin:0"><span class="chip">Live</span><span class="chip">Fleet</span><span class="chip">Sustainability</span></div>
+    </div>
+    <div class="card dash" style="margin-top:30px">
+      <div class="dash-head">
+        <div style="display:flex;align-items:center"><div class="tl"><i style="background:#ef4444"></i><i style="background:#f59e0b"></i><i style="background:#22c55e"></i></div>aeromind.io / fleet · live</div>
+        <div><span class="pulse"></span>47 aircraft online</div>
+      </div>
+      <div>
+        <div class="kpis">
+          <div class="kpi"><div class="lab">FLEET HEALTH</div><b>98.4%</b><small>▲ 1.2%</small></div>
+          <div class="kpi"><div class="lab">AIRCRAFT READY</div><b>47/50</b><small>on schedule</small></div>
+          <div class="kpi"><div class="lab">PAPER SAVED</div><b>1.2M</b><small>pages / mo</small></div>
+          <div class="kpi"><div class="lab">CO₂ AVOIDED</div><b>312 t</b><small>this quarter</small></div>
+        </div>
+        <div class="barchart">
+          <div class="cap">Maintenance efficiency <span>last 14 days</span></div>
+          <div class="bars">
+            <i style="height:42%"></i><i style="height:52%"></i><i style="height:38%"></i><i style="height:62%"></i><i style="height:48%"></i><i style="height:70%"></i><i style="height:58%"></i><i style="height:74%"></i><i style="height:60%"></i><i style="height:78%"></i><i style="height:66%"></i><i style="height:84%"></i><i style="height:72%"></i><i class="hot" style="height:96%"></i>
+          </div>
+        </div>
+      </div>
+      <div class="fleet">
+        <div class="cap">Live fleet</div>
+        <div class="f-row"><div><b>A320 · F-HRTP</b><span>In inspection</span></div><i style="background:#3b82f6"></i></div>
+        <div class="f-row"><div><b>B787 · F-HGZP</b><span>Ready to fly</span></div><i style="background:#22c55e"></i></div>
+        <div class="f-row"><div><b>A350 · F-HREO</b><span>Predictive alert</span></div><i style="background:#f59e0b"></i></div>
+        <div class="f-row"><div><b>A220 · F-HZBI</b><span>Signed off</span></div><i style="background:#22c55e"></i></div>
+        <div class="f-row"><div><b>B737 · F-HKLP</b><span>Awaiting parts</span></div><i style="background:#94a3b8"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="footnote">AI Maintenance OS · Sustainable Aviation</div>
+</section>
+
+<!-- 11 · CINEMATIC DEMO -->
+<section class="slide s-demo" id="demoSlide">
+  <div class="sky"></div>
+  <div class="topbar"><div class="brand" style="color:#fff"><div class="mark">A</div>AeroMind</div><div class="pageno" style="color:#64748b"><b style="color:#94a3b8">11</b> / 18</div></div>
+  <div class="demo-layout">
+    <div class="demo-left">
+      <div class="eyebrow" style="color:#4ade80">Demo · 60 seconds</div>
+      <h1 class="display" style="font-size:clamp(34px,3.6vw,56px)">Watch the platform <em class="f">come alive</em>.</h1>
+      <div class="scene-list" id="sceneList">
+        <div class="scene-item" data-s="0"><span class="sn">SCENE 1</span><b>Technician wears MR glasses</b><div class="mini"><i></i></div></div>
+        <div class="scene-item" data-s="1"><span class="sn">SCENE 2</span><b>AI highlights component</b><div class="mini"><i></i></div></div>
+        <div class="scene-item" data-s="2"><span class="sn">SCENE 3</span><b>Voice assistant reads manual</b><div class="mini"><i></i></div></div>
+        <div class="scene-item" data-s="3"><span class="sn">SCENE 4</span><b>Digital twin syncs</b><div class="mini"><i></i></div></div>
+        <div class="scene-item" data-s="4"><span class="sn">SCENE 5</span><b>Manager approves in-app</b><div class="mini"><i></i></div></div>
+        <div class="scene-item" data-s="5"><span class="sn">SCENE 6</span><b>Passenger sees transparency</b><div class="mini"><i></i></div></div>
+      </div>
+    </div>
+    <div class="demo-stage">
+      <div class="stage-chrome">
+        <div class="tl" style="display:flex;gap:6px"><i style="width:9px;height:9px;border-radius:50%;background:#ef4444"></i><i style="width:9px;height:9px;border-radius:50%;background:#f59e0b"></i><i style="width:9px;height:9px;border-radius:50%;background:#22c55e"></i></div>
+        <span id="sceneTitle">aeromind.demo / mr-session</span>
+        <div class="live"><i></i>SYNCED</div>
+      </div>
+      <div class="scenes" id="scenes">
+        <!-- SC1: MR HUD boot -->
+        <div class="scene">
+          <div class="hud">
+            <div class="corner c1"></div><div class="corner c2"></div><div class="corner c3"></div><div class="corner c4"></div>
+            <div class="scanline"></div>
+            <div class="reticle"></div>
+            <div class="hudtag" style="left:20px;top:20px"><span class="lab">SESSION</span>Tech M. Dupont · ID 8821</div>
+            <div class="hudtag" style="right:20px;bottom:20px"><span class="lab">TARGET</span>A320 · Engine 2 · Pre-flight</div>
+            <div class="hudtag" style="left:20px;bottom:20px"><span class="pulse"></span>MR glasses online</div>
+          </div>
+        </div>
+        <!-- SC2: AI detection -->
+        <div class="scene">
+          <div class="engine">
+            <div class="fan" id="fan"><div class="hubdot"></div></div>
+            <div class="conf"><span class="lab">AI DETECTION</span><b>Fan blade #7 · anomaly</b><div class="cm"><i></i></div><small style="color:#94a3b8;font-size:10.5px">confidence 98%</small></div>
+            <div class="hudtag" style="left:20px;bottom:20px"><span class="lab">RECOMMENDATION</span>Inspect leading edge · no replacement needed</div>
+          </div>
+        </div>
+        <!-- SC3: Voice -->
+        <div class="scene">
+          <div class="voice">
+            <div class="bubble q">"AeroMind, what's the torque spec for the fan blade retention bolt?"</div>
+            <div class="bubble a">Torque to 45 Nm, then a 90° turn. Use anti-seize compound C-118 on the threads.<span class="src">AMM 72-31-11 · Rev 42 · verified</span></div>
+            <div class="bubble a" style="background:transparent;border:0;padding:0"><div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+          </div>
+        </div>
+        <!-- SC4: Digital twin -->
+        <div class="scene">
+          <div class="twin">
+            <div class="plane-wire">
+              <svg viewBox="0 0 400 180">
+                <path d="M30 95 Q60 78 130 74 L295 70 Q345 70 370 88 Q345 104 295 104 L130 100 Q60 98 30 95 Z"/>
+                <path d="M180 74 L120 24 L150 24 L215 72"/>
+                <path d="M182 101 L130 148 L158 148 L218 103"/>
+                <path d="M348 78 L332 48 L348 48 L362 82"/>
+                <circle cx="150" cy="112" r="13"/><circle cx="240" cy="110" r="13"/>
+              </svg>
+            </div>
+            <div class="syncs">
+              <div class="sync"><i>✓</i>Inspection log written</div>
+              <div class="sync"><i>✓</i>Component history updated</div>
+              <div class="sync"><i>✓</i>Predictive model retrained</div>
+              <div class="sync"><i>✓</i>Twin state: in sync</div>
+            </div>
+          </div>
+        </div>
+        <!-- SC5: Approval -->
+        <div class="scene">
+          <div class="approve">
+            <div class="stamp">APPROVED</div>
+            <span class="lab">SIGN-OFF REQUEST</span>
+            <h4>A320 · F-HRTP ready for release</h4>
+            <small>Engine 2 pre-flight · completed 07:14</small>
+            <div class="rows">
+              <div class="r"><span>Technician</span><b>M. Dupont · ID 8821</b></div>
+              <div class="r"><span>AI verification</span><b>Passed · 98% conf.</b></div>
+              <div class="r"><span>Digital twin</span><b>In sync</b></div>
+              <div class="r"><span>CO₂ vs. traditional</span><b style="color:var(--green)">−12.4 kg</b></div>
+            </div>
+            <button class="abtn"><span class="fill"></span><span class="t1">Approve release</span><span class="t2">✓ Released to gate</span></button>
+          </div>
+        </div>
+        <!-- SC6: Passenger -->
+        <div class="scene">
+          <div class="qr-hint">SEAT 14A · SCAN THE CODE ON YOUR SEAT</div>
+          <div class="mini-phone"><div class="scr">
+            <div class="check-big">✓</div>
+            <h5>Your aircraft is ready.</h5>
+            <div class="sub">Flight AF 214 · Inspected · verified · signed</div>
+            <div class="p-row"><span>Engineer</span><b>M. Dupont</b></div>
+            <div class="p-row"><span>Inspection</span><b>07:14 today</b></div>
+            <div class="grade-line"><b style="color:var(--green)">A+</b><span>−12.4 kg CO₂<br>this turnaround</span></div>
+          </div></div>
+        </div>
+      </div>
+      <div class="caption-bar"><span class="cap-step" id="capStep">STEP 1 / 6</span><span id="capText">The technician puts on smart glasses — AeroMind sees exactly what they see.</span></div>
+      <div class="transport">
+        <button class="playbtn" id="playBtn" aria-label="Play demo">▶</button>
+        <div class="tline" id="tline">
+          <div class="tseg" data-s="0"><i></i></div><div class="tseg" data-s="1"><i></i></div><div class="tseg" data-s="2"><i></i></div>
+          <div class="tseg" data-s="3"><i></i></div><div class="tseg" data-s="4"><i></i></div><div class="tseg" data-s="5"><i></i></div>
+        </div>
+        <div class="tclock" id="tclock">00:00 / 01:00</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 12 · GREENER PATH -->
+<section class="slide">
+  <div class="grad-mist"></div>
+  <div class="topbar"><div class="brand"><div class="mark">A</div>AeroMind</div><div class="pageno"><b>12</b> / 19</div></div>
+  <div class="slide-body">
+    <div class="eyebrow">Why it is sustainable</div>
+    <h1 class="display" style="font-size:clamp(36px,4.2vw,62px)">A greener path <em class="f">by design</em>.</h1>
+    <div class="cmp" style="margin-top:44px">
+      <div class="card col bad">
+        <div class="lab">TRADITIONAL</div><h3>Maintenance as-is</h3>
+        <li><i>✕</i>Paper manuals</li><li><i>✕</i>Repeated inspections</li><li><i>✕</i>Knowledge lost</li><li><i>✕</i>Disconnected tools</li><li><i>✕</i>Reactive replacement</li>
+      </div>
+      <div class="mid"><div class="arr">→</div></div>
+      <div class="card col good">
+        <div class="lab">AEROMIND</div><h3>Maintenance, evolved</h3>
+        <li><i>✓</i>Digital workflows</li><li><i>✓</i>Predictive AI</li><li><i>✓</i>Knowledge preserved</li><li><i>✓</i>Connected systems</li><li><i>✓</i>Right-time repair</li>
+      </div>
+    </div>
+  </div>
+  <div class="footnote">AI Maintenance OS · Sustainable Aviation</div>
+</section>
+
+<!-- 13 · BUSINESS MODEL -->
+<section class="slide">
+  <div class="topbar"><div class="brand"><div class="mark">A</div>AeroMind</div><div class="pageno"><b>13</b> / 19</div></div>
+  <div class="slide-body">
+    <div class="eyebrow">Business model</div>
+    <h1 class="display" style="font-size:clamp(36px,4.2vw,62px)">Software revenue.<br><em class="f">Zero hardware risk.</em></h1>
+    <div class="grid4" style="margin-top:44px">
+      <div class="card bm"><span class="tag">Core</span><h3>SaaS</h3><p>Per-seat, per-technician</p><div class="foot">Recurring<i>→</i></div></div>
+      <div class="card bm hl"><span class="tag">Scale</span><h3>Enterprise</h3><p>Fleet-wide, custom SLA</p><div class="foot">Recurring<i>→</i></div></div>
+      <div class="card bm"><span class="tag">Ecosystem</span><h3>Marketplace</h3><p>AI models · manual packs</p><div class="foot">Recurring<i>→</i></div></div>
+      <div class="card bm"><span class="tag">Extend</span><h3>API + Training</h3><p>Integrations, certifications</p><div class="foot">Recurring<i>→</i></div></div>
+    </div>
+  </div>
+  <div class="footnote">AI Maintenance OS · Sustainable Aviation</div>
+</section>
+
+<!-- 14 · IMPACT OUTCOMES -->
+<section class="slide">
+  <div class="grad-mist"></div>
+  <div class="topbar"><div class="brand"><div class="mark">A</div>AeroMind</div><div class="pageno"><b>14</b> / 19</div></div>
+  <div class="slide-body">
+    <div class="eyebrow">Impact</div>
+    <h1 class="display" style="font-size:clamp(34px,4vw,58px)">Sustainability, <em class="f">measured in outcomes</em>.</h1>
+    <div class="grid3" style="margin-top:44px;gap:22px">
+      <div class="card gcard" style="padding:26px"><div style="display:flex;gap:14px;align-items:center"><div class="ico" style="width:44px;height:44px">📄</div><div><b style="font-size:17px">Less Paper</b><p>Fully digital workflows</p></div></div></div>
+      <div class="card gcard" style="padding:26px"><div style="display:flex;gap:14px;align-items:center"><div class="ico" style="width:44px;height:44px">♻️</div><div><b style="font-size:17px">Less Waste</b><p>Right-time replacement</p></div></div></div>
+      <div class="card gcard" style="padding:26px"><div style="display:flex;gap:14px;align-items:center"><div class="ico" style="width:44px;height:44px">⏱️</div><div><b style="font-size:17px">Less Downtime</b><p>Predictive intervention</p></div></div></div>
+      <div class="card gcard" style="padding:26px"><div style="display:flex;gap:14px;align-items:center"><div class="ico" style="width:44px;height:44px">🧠</div><div><b style="font-size:17px">Knowledge Preserved</b><p>Every expert, remembered</p></div></div></div>
+      <div class="card gcard" style="padding:26px"><div style="display:flex;gap:14px;align-items:center"><div class="ico" style="width:44px;height:44px">🛡️</div><div><b style="font-size:17px">Safer Passengers</b><p>Verified every flight</p></div></div></div>
+      <div class="card gcard" style="padding:26px"><div style="display:flex;gap:14px;align-items:center"><div class="ico" style="width:44px;height:44px">🌿</div><div><b style="font-size:17px">Greener Aviation</b><p>Sustainability by design</p></div></div></div>
+    </div>
+  </div>
+  <div class="footnote">AI Maintenance OS · Sustainable Aviation</div>
+</section>
+
+<!-- 15 · TEAM (NEW) -->
+<section class="slide">
+  <div class="topbar"><div class="brand"><div class="mark">A</div>AeroMind</div><div class="pageno"><b>15</b> / 19</div></div>
+  <div class="slide-body">
+    <div class="eyebrow">The team</div>
+    <h1 class="display" style="font-size:clamp(34px,4vw,58px)">Built by people who <em class="f">know the hangar</em>.</h1>
+    <div class="teamgrid" style="margin-top:44px;grid-template-columns:repeat(2,1fr);max-width:860px">
+      <div class="card tm" style="padding:40px 34px"><div class="avatar" style="width:108px;height:108px;font-size:34px">SW</div><b style="font-size:22px">Saif Eldeen Wesam</b><div class="role">Co-founder</div><p style="font-size:15px">Drives AeroMind's product vision — turning aircraft maintenance into a connected, intelligent workflow.</p></div>
+      <div class="card tm" style="padding:40px 34px"><div class="avatar" style="width:108px;height:108px;font-size:34px">MA</div><b style="font-size:22px">Marwan Asem</b><div class="role">Co-founder</div><p style="font-size:15px">Leads engineering — building the MR, AI and digital-twin platform behind AeroMind.</p></div>
+    </div>
+    <div class="pillrow" style="margin-top:26px">
+      <span class="chip"><span class="dot"></span>Student project · founding team of two</span>
+      <span class="chip"><span class="dot"></span>Product · AI · Mixed Reality</span>
+      <span class="chip"><span class="dot"></span>Hiring: aviation safety advisor</span>
+    </div>
+  </div>
+  <div class="footnote">AI Maintenance OS · Sustainable Aviation</div>
+</section>
+
+<!-- 16 · COMPETITION -->
+<section class="slide">
+  <div class="grad-mist"></div>
+  <div class="topbar"><div class="brand"><div class="mark">A</div>AeroMind</div><div class="pageno"><b>16</b> / 19</div></div>
+  <div class="slide-body">
+    <div class="eyebrow">Competition</div>
+    <h1 class="display" style="font-size:clamp(32px,3.8vw,54px)">Why we are <em class="f">different</em>.</h1>
+    <div class="card" style="margin-top:36px;overflow:hidden">
+      <table class="cmp-table">
+        <tr><th></th><th>Paper &amp; legacy MRO</th><th>Generic MRO software</th><th>AR hardware vendors</th><th class="us">AeroMind</th></tr>
+        <tr><td>MR-guided workflows</td><td>✕</td><td>✕</td><td>◐</td><td class="us">✓</td></tr>
+        <tr><td>Predictive AI on aircraft data</td><td>✕</td><td>◐</td><td>✕</td><td class="us">✓</td></tr>
+        <tr><td>Expert knowledge capture</td><td>✕</td><td>✕</td><td>✕</td><td class="us">✓</td></tr>
+        <tr><td>Passenger transparency</td><td>✕</td><td>✕</td><td>✕</td><td class="us">✓</td></tr>
+        <tr><td>Works on existing MR devices</td><td>—</td><td>—</td><td>◐ own hardware only</td><td class="us">✓ device-agnostic</td></tr>
+        <tr><td>Sustainability reporting built-in</td><td>✕</td><td>◐</td><td>✕</td><td class="us">✓</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="footnote">AI Maintenance OS · Sustainable Aviation</div>
+</section>
+
+<!-- 17 · THE ASK (NEW) -->
+<section class="slide">
+  <div class="topbar"><div class="brand"><div class="mark">A</div>AeroMind</div><div class="pageno"><b>17</b> / 19</div></div>
+  <div class="slide-body">
+    <div class="eyebrow">The ask</div>
+    <h1 class="display" style="font-size:clamp(36px,4.2vw,62px)">What we need to <em class="f">take off</em>.</h1>
+    <div class="askgrid">
+      <div class="askcard ac-blue">
+        <h3>Access to Real-World Data</h3>
+        <p>Give us access to real-world maintenance data to train our machine-learning models on what actually happens in the hangar.</p>
+      </div>
+      <div class="askcard ac-cyan">
+        <h3>Strategic Partnerships</h3>
+        <p>Partner with airlines and MROs to drive adoption and shape the platform around real operations.</p>
+      </div>
+      <div class="askcard ac-pink">
+        <h3>Visionary Supporters</h3>
+        <p>Mentor us, open doors, and help a student team transform aviation maintenance with AI-powered intelligence.</p>
+      </div>
+    </div>
+    <div class="pillrow" style="margin-top:36px">
+      <span class="chip"><span class="dot"></span>Mentorship from aviation professionals</span>
+      <span class="chip"><span class="dot"></span>Incubation &amp; competition opportunities</span>
+      <span class="chip"><span class="dot"></span>A chance to pilot with a real MRO team</span>
+    </div>
+    </div>
+  <div class="footnote">AI Maintenance OS · Sustainable Aviation</div>
+</section>
+
+<!-- 18 · RESEARCH & RESOURCES (NEW) -->
+<section class="slide">
+  <div class="grad-mist"></div>
+  <div class="topbar"><div class="brand"><div class="mark">A</div>AeroMind</div><div class="pageno"><b>18</b> / 19</div></div>
+  <div class="slide-body">
+    <div class="eyebrow">Research &amp; resources</div>
+    <h1 class="display" style="font-size:clamp(32px,3.6vw,52px)">Grounded in <em class="f">real evidence</em>.</h1>
+    <div class="resgrid" style="margin-top:36px">
+      <div class="card rescol">
+        <h3><i>📊</i>Industry &amp; market research</h3>
+        <a class="rlink" href="https://www.iata.org/en/programs/environment/" target="_blank"><div><b>IATA — Environment &amp; Fly Net Zero</b><span>Aviation's path to net-zero 2050</span></div><span class="go">Open ↗</span></a>
+        <a class="rlink" href="https://www.oliverwyman.com/our-expertise/insights/2024/jan/global-fleet-and-mro-market-forecast-2024-2034.html" target="_blank"><div><b>Oliver Wyman — Global Fleet &amp; MRO Forecast</b><span>Market size &amp; 10-year outlook</span></div><span class="go">Open ↗</span></a>
+        <a class="rlink" href="https://www.easa.europa.eu/" target="_blank"><div><b>EASA</b><span>Certification &amp; airworthiness framework</span></div><span class="go">Open ↗</span></a>
+        <a class="rlink" href="https://www.faa.gov/mechanics" target="_blank"><div><b>FAA — Aviation Mechanics</b><span>Technician workforce &amp; standards</span></div><span class="go">Open ↗</span></a>
+      </div>
+      <div class="card rescol">
+        <h3><i>🔬</i>Technology &amp; workforce studies</h3>
+        <a class="rlink" href="https://www.atec-amt.org/pipeline-report.html" target="_blank"><div><b>ATEC — Pipeline Report</b><span>AMT retirement &amp; workforce gap data</span></div><span class="go">Open ↗</span></a>
+        <a class="rlink" href="https://www.microsoft.com/en-us/hololens/industry-manufacturing" target="_blank"><div><b>Microsoft HoloLens — Manufacturing</b><span>MR in industrial maintenance</span></div><span class="go">Open ↗</span></a>
+        <a class="rlink" href="https://www.mckinsey.com/industries/aerospace-and-defense/our-insights" target="_blank"><div><b>McKinsey — Aerospace insights</b><span>Predictive maintenance &amp; digital ops</span></div><span class="go">Open ↗</span></a>
+        <a class="rlink" href="https://www.airbus.com/en/innovation/digital-transformation/digital-twin" target="_blank"><div><b>Airbus — Digital Twin</b><span>Digital-twin practice in aviation</span></div><span class="go">Open ↗</span></a>
+      </div>
+    </div>
+  </div>
+  <div class="footnote">Full bibliography &amp; data room available on request · hello@aeromind.io</div>
+</section>
+
+<!-- 19 · CLOSING -->
+<section class="slide s-close">
+  <div class="slide-body">
+    <div class="eyebrow">The future of flight</div>
+    <h1 class="display">A safer passenger.<br>A smarter technician.<br><em class="f">A greener aviation industry.</em></h1>
+    <div class="mark">A</div>
+    <b style="font-size:19px">AeroMind</b>
+    <div class="thanks">Thank you.</div>
+    <div class="contact">
+      <span class="chip">hello@aeromind.io</span>
+      <span class="chip">aeromind.io</span>
+    </div>
+  </div>
+</section>
+
+
+</div></div>
+
+<div class="nav">
+  <button id="prev" aria-label="Previous slide">←</button>
+  <div class="dots" id="dots"></div>
+  <button id="next" aria-label="Next slide">→</button>
+</div>
+
+<script>
+
+/* fit 1920x1080 deck to viewport (letterbox) */
+function fitDeck(){
+  const s=Math.min(innerWidth/1920,innerHeight/1080);
+  document.getElementById('deck').style.transform=`scale(${s})`;
+}
+addEventListener('resize',fitDeck);fitDeck();
+/* ---------------- deck navigation ---------------- */
+const slides=[...document.querySelectorAll('.slide')];
+const dots=document.getElementById('dots');
+let cur=0;
+slides.forEach((_,i)=>{const d=document.createElement('i');if(i===0)d.classList.add('on');d.onclick=()=>go(i);dots.appendChild(d)});
+function go(i){
+  if(i<0||i>=slides.length)return;
+  slides[cur].classList.remove('on');dots.children[cur].classList.remove('on');
+  cur=i;slides[cur].classList.add('on');dots.children[cur].classList.add('on');
+  if(cur===DEMO_INDEX){resetDemo();setTimeout(()=>playDemo(),700)}else{stopDemo()}
+  restartCounters();
+}
+document.getElementById('prev').onclick=()=>go(cur-1);
+document.getElementById('next').onclick=()=>go(cur+1);
+addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='PageDown')go(cur+1);
+  if(e.key==='ArrowLeft'||e.key==='PageUp')go(cur-1);
+});
+addEventListener('click',e=>{ /* click blank area advances (ignore interactive) */
+  if(e.target.closest('.nav,.demo-stage,.scene-item,a,button'))return;
+  // only advance on double-click to avoid accidents
+});
+
+/* ---------------- 60s demo engine ---------------- */
+const DEMO_INDEX=slides.findIndex(s=>s.id==='demoSlide');
+const SCENE_SECONDS=10, N=6, TOTAL=SCENE_SECONDS*N;
+const scenes=[...document.querySelectorAll('#scenes .scene')];
+const items=[...document.querySelectorAll('#sceneList .scene-item')];
+const segs=[...document.querySelectorAll('#tline .tseg i')];
+const segWraps=[...document.querySelectorAll('#tline .tseg')];
+const minis=[...document.querySelectorAll('#sceneList .mini i')];
+const playBtn=document.getElementById('playBtn');
+const clock=document.getElementById('tclock');
+const captions=[
+ "The technician puts on smart glasses — AeroMind sees exactly what they see.",
+ "The AI instantly spots the worn part and points right at it. No guesswork.",
+ "The technician just asks out loud — the assistant reads the answer from the official manual.",
+ "Every action is saved automatically to the aircraft's digital record. Nothing gets lost.",
+ "The manager checks everything on their phone and approves with one tap.",
+ "The passenger scans a QR code at their seat and sees their plane was checked — and how much CO2 was saved."
+];
+const titles=['aeromind.demo / mr-session','aeromind.demo / ai-detection','aeromind.demo / voice-assistant','aeromind.demo / digital-twin','aeromind.demo / manager-approval','aeromind.demo / passenger-app'];
+let playing=false,t=0,raf=null,lastTs=null;
+
+/* build fan blades for scene 2 */
+const fan=document.getElementById('fan');
+for(let i=0;i<9;i++){const b=document.createElement('div');b.className='blade'+(i===2?' hot':'');b.style.transform=`rotate(${i*40}deg)`;fan.appendChild(b)}
+
+function setScene(idx,force){
+  scenes.forEach((s,i)=>{
+    const on=i===idx;
+    if(force&&on){s.classList.remove('on');void s.offsetWidth}
+    s.classList.toggle('on',on);
+  });
+  items.forEach((it,i)=>it.classList.toggle('on',i===idx));
+  document.getElementById('sceneTitle').textContent=titles[idx];
+  document.getElementById('capStep').textContent=`STEP ${idx+1} / 6`;
+  document.getElementById('capText').textContent=captions[idx];
+}
+function fmt(s){s=Math.floor(s);return `0${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`}
+function render(){
+  const idx=Math.min(N-1,Math.floor(t/SCENE_SECONDS));
+  const frac=(t-idx*SCENE_SECONDS)/SCENE_SECONDS;
+  segs.forEach((s,i)=>s.style.width=i<idx?'100%':i===idx?`${frac*100}%`:'0');
+  minis.forEach((m,i)=>m.style.width=i<idx?'100%':i===idx?`${frac*100}%`:'0');
+  clock.textContent=`${fmt(t)} / 01:00`;
+  return idx;
+}
+let curScene=-1;
+function tick(ts){
+  if(!playing)return;
+  if(lastTs==null)lastTs=ts;
+  t+=(ts-lastTs)/1000;lastTs=ts;
+  if(t>=TOTAL){t=TOTAL;render();stopDemo();playBtn.textContent='↺';return}
+  const idx=render();
+  if(idx!==curScene){curScene=idx;setScene(idx,true)}
+  raf=requestAnimationFrame(tick);
+}
+function playDemo(){
+  if(t>=TOTAL)resetDemo();
+  playing=true;lastTs=null;playBtn.textContent='❚❚';
+  raf=requestAnimationFrame(tick);
+}
+function stopDemo(){playing=false;lastTs=null;if(raf)cancelAnimationFrame(raf);if(playBtn.textContent==='❚❚')playBtn.textContent='▶'}
+function resetDemo(){stopDemo();t=0;curScene=-1;render();setScene(0,true);curScene=0;playBtn.textContent='▶'}
+function togglePlay(){playing?stopDemo():playDemo()}
+playBtn.onclick=togglePlay;
+segWraps.forEach((w,i)=>w.onclick=()=>{t=i*SCENE_SECONDS;curScene=i;render();setScene(i,true);if(!playing)playDemo()});
+items.forEach((it,i)=>it.onclick=()=>{t=i*SCENE_SECONDS;curScene=i;render();setScene(i,true);if(!playing)playDemo()});
+resetDemo();
+
+/* respect reduced motion: don't autoplay */
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const _go=go;
+if(reduce){go=function(i){_go(i);stopDemo()}}
+
+/* ---------------- animated counters (stats slide) ---------------- */
+function restartCounters(){
+  const s=slides[cur];
+  s.querySelectorAll('[data-count]').forEach(el=>{
+    const target=parseFloat(el.dataset.count), dec=parseInt(el.dataset.dec||'0'), suf=el.dataset.suffix||'';
+    if(reduce){el.textContent=target.toFixed(dec)+suf;return}
+    const t0=performance.now(), dur=1200;
+    function step(now){
+      const p=Math.min(1,(now-t0)/dur), e=1-Math.pow(1-p,3);
+      el.textContent=(target*e).toFixed(dec)+suf;
+      if(p<1)requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  });
+}
+</script>
+</body>
+</html>
